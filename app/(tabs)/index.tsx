@@ -8,37 +8,41 @@ import {
   Text,
   View,
 } from "react-native";
+import axios from "axios";
 import { Product } from "../types/product";
 
 export default function ProductsScreen() {
   const router = useRouter();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dataProduct, setDataProducts] = useState([]);
+  const [Loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    setLoading(true);
+
+    const query = await axios.get("https://fakestoreapi.com/products/");
+
+    // Adapter les données de l'API fakestore
+    const adaptedProducts: Product[] = query.data.map((item: any) => ({
+      id: item.id.toString(),
+      name: item.title,
+      price: item.price,
+      description: item.description,
+      image: item.image,
+      category: item.category,
+      rating: item.rating.rate,
+    }));
+
+    setDataProducts(adaptedProducts);
+
+    setLoading(false);
+  };
+
+  setTimeout(() => {
+    setLoading(false);
+  }, 1500);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch("https://fakestoreapi.com/products");
-        const data = await response.json();
-        // Adapter les données de l'API fakestore
-        const adaptedProducts: Product[] = data.map((item: any) => ({
-          id: item.id.toString(),
-          name: item.title,
-          price: item.price,
-          description: item.description,
-          image: item.image,
-          category: item.category,
-          rating: item.rating.rate,
-        }));
-        setProducts(adaptedProducts);
-      } catch (error) {
-        console.error("Erreur lors du chargement des produits:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
+    loadData();
   }, []);
 
   const handleProductPress = (id: string) => {
@@ -67,7 +71,7 @@ export default function ProductsScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={products}
+        data={dataProduct}
         renderItem={renderProductCard}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}

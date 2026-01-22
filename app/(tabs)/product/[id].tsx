@@ -9,43 +9,53 @@ import {
   Text,
   View,
 } from "react-native";
+import axios from "axios";
 import { Product } from "../../types/product";
 
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const [product, setProduct] = useState();
-  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [Loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    setLoading(true);
+
+    try {
+      const query = await axios.get(
+        `https://fakestoreapi.com/products/${id}`
+      );
+
+      // Adapter les données de l'API fakestore
+      const adaptedProduct: Product = {
+        id: query.data.id.toString(),
+        name: query.data.title,
+        price: query.data.price,
+        description: query.data.description,
+        image: query.data.image,
+        category: query.data.category,
+        rating: query.data.rating.rate,
+      };
+
+      setProduct(adaptedProduct);
+    } catch (error) {
+      console.error("Erreur lors du chargement du produit:", error);
+    }
+
+    setLoading(false);
+  };
+
+  setTimeout(() => {
+    setLoading(false);
+  }, 1500);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`https://fakestoreapi.com/products/${id}`);
-        const data = await response.json();
-        // Adapter les données de l'API fakestore
-        const adaptedProduct: Product = {
-          id: data.id,
-          name: data.title,
-          price: data.price,
-          description: data.description,
-          image: data.image,
-          category: data.category,
-          rating: data.rating.rate,
-        };
-        setProduct(adaptedProduct);
-      } catch (error) {
-        console.error("Erreur lors du chargement du produit:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (id) {
-      fetchProduct();
+      loadData();
     }
   }, [id]);
 
-  if (loading) {
+  if (Loading) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Chargement...</Text>
